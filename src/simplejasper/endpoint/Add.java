@@ -8,21 +8,21 @@ import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
 
+import io.javalin.Javalin;
 import simplejasper.Jasper;
-import spark.Service;
 
 public class Add implements Endpoint {
 
     @Override
     @SuppressWarnings("unchecked")
-    public void configure(Service spark, String basePath) {
-        spark.post(basePath + "/add", (request, response) -> {
-            response.header("Content-Type", "application/json");
-            Map<String, Object> requestData = parseJSON(request.body());
+    public void configure(Javalin app, String basePath) {
+        app.post(basePath + "/add", ctx -> {
+            ctx.header("Content-Type", "application/json");
+            Map<String, Object> requestData = parseJSON(ctx.body());
             compile(requestData);
             List<Map<String, Object>> images = (List<Map<String, Object>>) requestData.get("images");
             processImages(images);
-            return "{\"success\":true}"; 
+            ctx.result("{\"success\":true}"); 
         });
     }
     

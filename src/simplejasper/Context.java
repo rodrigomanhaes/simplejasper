@@ -2,67 +2,46 @@
 
 package simplejasper;
 
-import javax.servlet.http.HttpServletResponse;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.javalin.Javalin;
 import simplejasper.endpoint.Endpoint;
-import spark.Request;
-import spark.Response;
-import spark.Service;
 
 public class Context {
     private static final Logger logger = LoggerFactory.getLogger(Context.class);
-    private final Service spark;
+    private final Javalin app;
     private final String basePath;
     
     public Context(int port, String basePath) {
         this.basePath = basePath;
-        this.spark = Service.ignite().port(port); 
+        this.app = Javalin.create(config -> {
+            config.enableCorsForAllOrigins();
+            config.requestLogger((ctx, ms) -> {
+              logger.info(requestLog(ctx));
+              logger.info(responseLog(ctx));
+              logger.info("Request processed in {} milliseconds.", ms);
+            });
+        }).start(port); 
     }
     
     public void addEndpoint(Endpoint endpoint) {
-        endpoint.configure(spark, basePath);
+        endpoint.configure(app, basePath);
         logger.info("Endpoint registered for {}.", endpoint.getClass().getSimpleName());
     }
     
-    public void enableCors() {
-        spark.before((request, response) -> {
-            response.header("Access-Control-Allow-Origin", "*");
-            response.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-            response.header("Access-Control-Allow-Headers", "Content-Type, api_key, Authorization");
-        });
-        logger.info("CORS basic support enabled.");
-    }
-    
-    public void enableRequestLogs() {
-        spark.after((request, response) -> {
-            logger.info(requestLog(request, response));
-        });
-    }
-    
-    private String requestLog(Request request, Response response) {
+    private String requestLog(io.javalin.http.Context ctx) {
         return new StringBuilder()
-            .append(requestLog(request)).append(" ")
-            .append(responseLog(response))
+            .append(ctx.method()).append(" ")
+            .append(ctx.url())
             .toString();
     }
   
-    private StringBuilder requestLog(Request request) {
-        return new StringBuilder()
-            .append(request.requestMethod()).append(" ")
-            .append(request.url()).append(" ")
-            .append(request.body());
-    }
-  
-    private StringBuilder responseLog(Response response) {
-        HttpServletResponse rawResponse = response.raw();
+    private String responseLog(io.javalin.http.Context ctx) {
         return new StringBuilder()
            .append("Response: ")
-           .append(rawResponse.getStatus()).append(" ")
-           .append(rawResponse.getHeader("content-type")).append(" ")
-           .append("body size: ").append(response.body().length());
+           .append(ctx.status()).append(" ")
+           .append(ctx.header("content-type"))
+           .toString();
     }
-
 }

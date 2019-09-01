@@ -69,6 +69,10 @@
       <groupId>net.sf.jasperreports</groupId>
       <artifactId>jasperreports-fonts</artifactId>
     </dependency>
+    <dependency>
+      <groupId>io.javalin</groupId>
+      <artifactId>javalin</artifactId>
+    </dependency>
   </dependencies>
   <dependencyManagement>
   	<dependencies>
@@ -116,6 +120,11 @@
   			<groupId>net.sf.jasperreports</groupId>
   			<artifactId>jasperreports-fonts</artifactId>
   			<version>6.9.0</version>
+  		</dependency>
+  		<dependency>
+  			<groupId>io.javalin</groupId>
+  			<artifactId>javalin</artifactId>
+  			<version>3.4.1</version>
   		</dependency>
   	</dependencies>
   </dependencyManagement>

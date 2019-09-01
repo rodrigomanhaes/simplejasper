@@ -13,29 +13,29 @@ import org.json.XML;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.javalin.Javalin;
+import io.javalin.http.Context;
 import simplejasper.Jasper;
-import spark.Request;
-import spark.Service;
 
 public class Generate implements Endpoint {
   
     @Override
     @SuppressWarnings("unchecked")
-    public void configure(Service spark, String basePath) {
-        spark.post(basePath + "/generate", (request, response) -> {
-            response.header("Content-Type", "application/json");
-            Map<String, Object> decodedData = decodedData(request);
+    public void configure(Javalin app, String basePath) {
+        app.post(basePath + "/generate", (ctx) -> {
+            ctx.header("Content-Type", "application/json");
+            Map<String, Object> decodedData = decodedData(ctx);
             String jsonData = jsonData(decodedData);
             String xmlData = xmlData(jsonData);
             Map<String, Object> parameters = (Map<String, Object>) decodedData.get("parameters");
             byte[] pdf = Jasper.generate(decodedData.get("name").toString(), xmlData, parameters);
             String encodedPdf = encode64(pdf);
-            return "{\"content\":\"" + encodedPdf + "\"}";
+            ctx.result("{\"content\":\"" + encodedPdf + "\"}");
         });
     }
-
-    private Map<String, Object> decodedData(Request request) {
-        Map<String, Object> requestData = parseJSON(request.body());
+ 
+    private Map<String, Object> decodedData(Context ctx) {
+        Map<String, Object> requestData = parseJSON(ctx.body());
         String encodedData = (String) requestData.get("data");
         String decodedData = decode64(encodedData, Charset.forName("UTF-8"));
         return parseJSON(decodedData);

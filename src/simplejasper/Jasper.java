@@ -37,7 +37,6 @@ public class Jasper {
     
     public static byte[] generate(String reportName, String xmlData, Map<String, Object> parameters) {
         String xpathCriteria = "/jasper/array";
-        System.out.println(xmlData);
         try {
             JRXmlDataSource xmlSource = new JRXmlDataSource(new ByteArrayInputStream(xmlData.getBytes()), xpathCriteria);
             InputStream report = from(new File(jasperPath(reportName, "jasper")));

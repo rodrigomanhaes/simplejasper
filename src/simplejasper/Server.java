@@ -13,8 +13,6 @@ public class Server {
         Context context = new Context(port, basePath);
         context.addEndpoint(new Add());
         context.addEndpoint(new Generate());
-        context.enableRequestLogs();
-        context.enableCors();
     }
 
 }

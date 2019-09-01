@@ -2,8 +2,8 @@
 
 package simplejasper.endpoint;
 
-import spark.Service;
+import io.javalin.Javalin;
 
 public interface Endpoint {
-    void configure(Service spark, String basePath);
+    void configure(Javalin app, String basePath);
 }
