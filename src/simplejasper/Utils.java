@@ -90,7 +90,12 @@ public class Utils {
     }
 
     public static String jasperPath(String reportName) {
-      return System.getenv("JASPER_DIR") + "/" + reportName;
-  }
+        return System.getenv("JASPER_DIR") + "/" + reportName;
+    }
+    
+    public static String environment(String variable, String defaultValue) {
+        String originalValue = System.getenv(variable);
+        return originalValue == null || originalValue.isBlank() ? defaultValue : originalValue;
+    }
 
 }
