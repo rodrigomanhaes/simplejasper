@@ -22,7 +22,6 @@
               <goal>repackage</goal>
             </goals>
             <configuration>
-              <classifier>spring-boot</classifier>
               <mainClass>
                 simplejasper.Server
               </mainClass>
@@ -74,10 +73,8 @@
       <artifactId>javalin</artifactId>
     </dependency>
     <dependency>
-      <groupId>local.jasperreports.condensed</groupId>
-      <artifactId>local.jasperreports.condensed</artifactId>
-      <scope>system</scope>
-      <systemPath>${basedir}/resources/jasperreports.condensed.jar</systemPath>
+      <groupId>br.uenf.simplejasper</groupId>
+      <artifactId>fonts-condensed</artifactId>
     </dependency>
   </dependencies>
   <dependencyManagement>
@@ -133,10 +130,13 @@
   			<version>3.4.1</version>
   		</dependency>
   		<dependency>
-  			<groupId>local.jasperreports.condensed</groupId>
-  			<artifactId>local.jasperreports.condensed</artifactId>
+  			<groupId>br.uenf.simplejasper</groupId>
+  			<artifactId>fonts-condensed</artifactId>
   			<version>1.0.0</version>
   		</dependency>
   	</dependencies>
   </dependencyManagement>
+  <properties>
+  	<start-class>simplejasper.Server</start-class>
+  </properties>
 </project>
