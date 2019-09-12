@@ -73,6 +73,12 @@
       <groupId>io.javalin</groupId>
       <artifactId>javalin</artifactId>
     </dependency>
+    <dependency>
+      <groupId>local.jasperreports.condensed</groupId>
+      <artifactId>local.jasperreports.condensed</artifactId>
+      <scope>system</scope>
+      <systemPath>${basedir}/resources/jasperreports.condensed.jar</systemPath>
+    </dependency>
   </dependencies>
   <dependencyManagement>
   	<dependencies>
@@ -125,6 +131,11 @@
   			<groupId>io.javalin</groupId>
   			<artifactId>javalin</artifactId>
   			<version>3.4.1</version>
+  		</dependency>
+  		<dependency>
+  			<groupId>local.jasperreports.condensed</groupId>
+  			<artifactId>local.jasperreports.condensed</artifactId>
+  			<version>1.0.0</version>
   		</dependency>
   	</dependencies>
   </dependencyManagement>
