@@ -9,6 +9,7 @@ import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -96,6 +97,14 @@ public class Utils {
     public static String environment(String variable, String defaultValue) {
         String originalValue = System.getenv(variable);
         return originalValue == null || originalValue.isBlank() ? defaultValue : originalValue;
+    }
+
+    public static void setDefaultLocale() {
+        String language = environment("JASPER_LANGUAGE", null);
+        String country = environment("JASPER_COUNTRY", null);
+        if (language != null && country != null) {
+            Locale.setDefault(new Locale(language, country));
+        }
     }
 
 }
