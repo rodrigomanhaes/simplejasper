@@ -2,6 +2,9 @@
 
 package simplejasper;
 
+import java.io.IOException;
+import java.util.logging.LogManager;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,16 +16,18 @@ public class Context {
     private final Javalin app;
     private final String basePath;
     
-    public Context(int port, String basePath) {
+    public Context(int port, String basePath) throws IOException {
         this.basePath = basePath;
         this.app = Javalin.create(config -> {
             config.enableCorsForAllOrigins();
             config.requestLogger((ctx, ms) -> {
-              logger.info(requestLog(ctx));
-              logger.info(responseLog(ctx));
-              logger.info("Request processed in {} milliseconds.", ms);
+              logger.info(
+                  "{} {}. Request processed in {} milliseconds.",
+                  requestLog(ctx), responseLog(ctx), ms
+               );
             });
         }).start(port); 
+       this.configureLogger();
     }
     
     public void addEndpoint(Endpoint endpoint) {
@@ -43,5 +48,13 @@ public class Context {
            .append(ctx.status()).append(" ")
            .append(ctx.header("content-type"))
            .toString();
+    }
+
+    private void configureLogger() throws IOException {
+      LogManager.getLogManager().readConfiguration(
+          this.getClass()
+            .getClassLoader()
+            .getResourceAsStream("logging.properties")
+      );
     }
 }
