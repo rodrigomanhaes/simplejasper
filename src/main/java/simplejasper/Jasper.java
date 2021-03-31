@@ -12,7 +12,9 @@ import java.nio.file.Files;
 import java.util.Collections;
 import java.util.Map;
 
+import net.sf.jasperreports.engine.DefaultJasperReportsContext;
 import net.sf.jasperreports.engine.JRException;
+import net.sf.jasperreports.engine.JRPropertiesUtil;
 import net.sf.jasperreports.engine.JasperCompileManager;
 import net.sf.jasperreports.engine.JasperReportsContext;
 import net.sf.jasperreports.engine.JasperRunManager;
@@ -24,6 +26,15 @@ import net.sf.jasperreports.repo.PersistenceServiceFactory;
 import net.sf.jasperreports.repo.RepositoryService;
 
 public class Jasper {
+
+    static {
+        DefaultJasperReportsContext context = DefaultJasperReportsContext.getInstance();
+        JRPropertiesUtil.getInstance(context).setProperty(
+            "net.sf.jasperreports.xpath.executer.factory",
+            "net.sf.jasperreports.engine.util.xml.JaxenXPathExecuterFactory"
+         );
+    }
+
     public static void compile(String reportName, String jrxmlContent) {
         String jrxmlPath = jasperPath(reportName, "jrxml");
         writeToFile(reportName, jrxmlContent, "jrxml");
@@ -34,7 +45,7 @@ public class Jasper {
             throw new RuntimeException(e);
         }
     }
-    
+
     public static byte[] generate(String reportName, String xmlData, Map<String, Object> parameters) {
         String xpathCriteria = "/jasper/array";
         try {
@@ -46,7 +57,7 @@ public class Jasper {
             throw new RuntimeException(e);
         }
     }
-    
+
     private static InputStream from(File file) {
         try {
             return new ByteArrayInputStream(Files.readAllBytes(file.toPath()));
@@ -54,7 +65,7 @@ public class Jasper {
             throw new RuntimeException(e);
         }
     }
-    
+
     private static JasperReportsContext jasperContext(String reportName) {
         SimpleJasperReportsContext context = new SimpleJasperReportsContext();
         FileRepositoryService fileRepository = new FileRepositoryService(context, jasperDir(reportName), false);
