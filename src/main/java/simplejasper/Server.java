@@ -1,7 +1,6 @@
 package simplejasper;
 
 import static simplejasper.Utils.environment;
-import static simplejasper.Utils.setDefaultLocale;
 
 import java.io.IOException;
 

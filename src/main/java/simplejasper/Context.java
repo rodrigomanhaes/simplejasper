@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.javalin.Javalin;
+import io.javalin.http.InternalServerErrorResponse;
 import simplejasper.endpoint.Endpoint;
 
 public class Context {
@@ -28,6 +29,10 @@ public class Context {
             });
         }).start(port); 
        this.configureLogger();
+       this.app.exception(Exception.class, (e, ctx) -> {
+           logger.error("{} - {}", e.getClass().getName(), e.getMessage());
+           throw new InternalServerErrorResponse();
+       });
     }
     
     public void addEndpoint(Endpoint endpoint) {
