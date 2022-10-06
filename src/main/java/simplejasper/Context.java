@@ -16,37 +16,41 @@ public class Context {
     private static final Logger logger = LoggerFactory.getLogger(Context.class);
     private final Javalin app;
     private final String basePath;
-    
+
     public Context(int port, String basePath) throws IOException {
         this.basePath = basePath;
         this.app = Javalin.create(config -> {
-            config.enableCorsForAllOrigins();
-            config.requestLogger((ctx, ms) -> {
+            config.plugins.enableCors(cors -> {
+                cors.add(it -> {
+                    it.anyHost();
+                });
+            });
+            config.requestLogger.http((ctx, ms) -> {
               logger.info(
                   "{} {}. Request processed in {} milliseconds.",
                   requestLog(ctx), responseLog(ctx), ms
                );
             });
-        }).start(port); 
+        }).start(port);
        this.configureLogger();
        this.app.exception(Exception.class, (e, ctx) -> {
            logger.error("{} - {}", e.getClass().getName(), e.getMessage());
            throw new InternalServerErrorResponse();
        });
     }
-    
+
     public void addEndpoint(Endpoint endpoint) {
         endpoint.configure(app, basePath);
         logger.info("Endpoint registered for {}.", endpoint.getClass().getSimpleName());
     }
-    
+
     private String requestLog(io.javalin.http.Context ctx) {
         return new StringBuilder()
             .append(ctx.method()).append(" ")
             .append(ctx.url())
             .toString();
     }
-  
+
     private String responseLog(io.javalin.http.Context ctx) {
         return new StringBuilder()
            .append("Response: ")
