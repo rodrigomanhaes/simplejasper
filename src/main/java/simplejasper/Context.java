@@ -31,6 +31,10 @@ public class Context {
                   requestLog(ctx), responseLog(ctx), ms
                );
             });
+            String maxBodySize = Utils.environment("MAX_REQUEST_BODY_SIZE", null);
+            if (maxBodySize != null) {
+                config.http.maxRequestSize = Long.parseLong(maxBodySize);
+            }
         }).start(port);
        this.configureLogger();
        this.app.exception(Exception.class, (e, ctx) -> {
