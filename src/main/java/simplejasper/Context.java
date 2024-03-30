@@ -20,8 +20,8 @@ public class Context {
     public Context(int port, String basePath) throws IOException {
         this.basePath = basePath;
         this.app = Javalin.create(config -> {
-            config.plugins.enableCors(cors -> {
-                cors.add(it -> {
+            config.bundledPlugins.enableCors(cors -> {
+                cors.addRule(it -> {
                     it.anyHost();
                 });
             });
