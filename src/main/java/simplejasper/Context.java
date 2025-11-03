@@ -48,6 +48,10 @@ public class Context {
         logger.info("Endpoint registered for {}.", endpoint.getClass().getSimpleName());
     }
 
+    public Javalin getApp() {
+        return app;
+    }
+
     private String requestLog(io.javalin.http.Context ctx) {
         return new StringBuilder()
             .append(ctx.method()).append(" ")

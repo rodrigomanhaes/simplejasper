@@ -70,32 +70,46 @@ public class Utils {
     };
 
     private static void createParentDir(String name) {
-        new File(new File(name).getParent()).mkdir();
+        File parentDir = new File(new File(name).getParent());
+        if (!parentDir.exists()) {
+            parentDir.mkdirs();
+        }
     }
     
     public static String jasperDir(String reportName) {
-        String baseDir = System.getenv("JASPER_DIR");
+        String baseDir = getJasperDir();
         String[] splitted = reportName.split("/");
         return splitted.length == 2 ?  baseDir + "/" + splitted[0] : baseDir;
     }
-    
+
     public static String singleFileName(String reportName, String extension) {
         String[] splitted = reportName.split("/");
         String fileName = splitted.length == 2 ? splitted[1] : reportName;
         String withoutExtension = fileName.replaceFirst("[.][^.]+$", "");
         return withoutExtension + "." + extension;
     }
-    
+
     public static String jasperPath(String reportName, String extension) {
-        return System.getenv("JASPER_DIR") + "/" + reportName + "." + extension;
+        return getJasperDir() + "/" + reportName + "." + extension;
     }
 
     public static String jasperPath(String reportName) {
-        return System.getenv("JASPER_DIR") + "/" + reportName;
+        return getJasperDir() + "/" + reportName;
+    }
+
+    private static String getJasperDir() {
+        String dir = System.getenv("JASPER_DIR");
+        if (dir == null || dir.isBlank()) {
+            dir = System.getProperty("JASPER_DIR");
+        }
+        return dir;
     }
     
     public static String environment(String variable, String defaultValue) {
         String originalValue = System.getenv(variable);
+        if (originalValue == null || originalValue.isBlank()) {
+            originalValue = System.getProperty(variable);
+        }
         return originalValue == null || originalValue.isBlank() ? defaultValue : originalValue;
     }
 

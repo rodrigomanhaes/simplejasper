@@ -45,6 +45,12 @@ public class Jasper {
 
         try (InputStream is = new ByteArrayInputStream(jrxmlContent.getBytes(StandardCharsets.UTF_8))) {
             JasperReport report = JasperCompileManager.compileReport(is);
+            // Ensure parent directory exists before saving
+            File outputFile = new File(jasperOut);
+            File parentDir = outputFile.getParentFile();
+            if (parentDir != null && !parentDir.exists()) {
+                parentDir.mkdirs();
+            }
             JRSaver.saveObject(report, jasperOut);
         } catch (IOException | JRException e) {
             throw new RuntimeException("Error compiling Jasper report: " + reportName, e);
