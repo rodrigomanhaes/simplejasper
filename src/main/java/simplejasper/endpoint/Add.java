@@ -22,13 +22,13 @@ public class Add implements Endpoint {
             compile(requestData);
             List<Map<String, Object>> images = (List<Map<String, Object>>) requestData.get("images");
             processImages(images);
-            ctx.result("{\"success\":true}"); 
+            ctx.result("{\"success\":true}");
         });
     }
-    
+
     private void processImages(List<Map<String, Object>> images) {
         if (images == null) { return; }
-        
+
         for (Map<String, Object> image: images) {
             String imageName = (String) image.get("name");
             String encodedImageContent = (String) image.get("content");
@@ -45,5 +45,4 @@ public class Add implements Endpoint {
             Jasper.compile(name, content);
         }
     }
-    
 }

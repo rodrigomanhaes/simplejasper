@@ -2,12 +2,12 @@ package simplejasper;
 
 import static simplejasper.Utils.jasperDir;
 import static simplejasper.Utils.jasperPath;
-import static simplejasper.Utils.writeToFile;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Collections;
 import java.util.Map;
@@ -16,10 +16,12 @@ import net.sf.jasperreports.engine.DefaultJasperReportsContext;
 import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JRPropertiesUtil;
 import net.sf.jasperreports.engine.JasperCompileManager;
+import net.sf.jasperreports.engine.JasperReport;
 import net.sf.jasperreports.engine.JasperReportsContext;
 import net.sf.jasperreports.engine.JasperRunManager;
 import net.sf.jasperreports.engine.SimpleJasperReportsContext;
 import net.sf.jasperreports.engine.data.JRXmlDataSource;
+import net.sf.jasperreports.engine.util.JRSaver;
 import net.sf.jasperreports.repo.FileRepositoryPersistenceServiceFactory;
 import net.sf.jasperreports.repo.FileRepositoryService;
 import net.sf.jasperreports.repo.PersistenceServiceFactory;
@@ -31,27 +33,35 @@ public class Jasper {
         DefaultJasperReportsContext context = DefaultJasperReportsContext.getInstance();
         JRPropertiesUtil.getInstance(context).setProperty(
             "net.sf.jasperreports.xpath.executer.factory",
-            "net.sf.jasperreports.engine.util.xml.JaxenXPathExecuterFactory"
-         );
+            "net.sf.jasperreports.jaxen.util.xml.JaxenXPathExecuterFactory"
+        );
+        JRPropertiesUtil.getInstance(context).setProperty(
+            "net.sf.jasperreports.default.font.encoding", "UTF-8"
+        );
     }
 
     public static void compile(String reportName, String jrxmlContent) {
-        String jrxmlPath = jasperPath(reportName, "jrxml");
-        writeToFile(reportName, jrxmlContent, "jrxml");
-        try {
-            JasperCompileManager.compileReportToFile(jrxmlPath, jasperPath(reportName, "jasper"));
-        } 
-        catch (JRException e) {
-            throw new RuntimeException(e);
+        String jasperOut = jasperPath(reportName, "jasper");
+
+        try (InputStream is = new ByteArrayInputStream(jrxmlContent.getBytes(StandardCharsets.UTF_8))) {
+            JasperReport report = JasperCompileManager.compileReport(is);
+            JRSaver.saveObject(report, jasperOut);
+        } catch (IOException | JRException e) {
+            throw new RuntimeException("Error compiling Jasper report: " + reportName, e);
         }
     }
 
     public static byte[] generate(String reportName, String xmlData, Map<String, Object> parameters) {
         String xpathCriteria = "/jasper/array";
         try {
-            JRXmlDataSource xmlSource = new JRXmlDataSource(new ByteArrayInputStream(xmlData.getBytes()), xpathCriteria);
-            InputStream report = from(new File(jasperPath(reportName, "jasper")));
-            return JasperRunManager.getInstance(jasperContext(reportName)).runToPdf(report, parameters, xmlSource);
+            JRXmlDataSource xmlSource = new JRXmlDataSource(
+                new ByteArrayInputStream(xmlData.getBytes(StandardCharsets.UTF_8)),
+                xpathCriteria
+            );
+
+            InputStream reportStream = from(new File(jasperPath(reportName, "jasper")));
+            JasperReportsContext context = jasperContext(reportName);
+            return JasperRunManager.getInstance(context).runToPdf(reportStream, parameters, xmlSource);
         }
         catch (JRException e) {
             throw new RuntimeException(e);
