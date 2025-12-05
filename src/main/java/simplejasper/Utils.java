@@ -16,40 +16,34 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class Utils {
+    private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
+
     public static void writeToFile(String reportName, String content, String extension) {
         String path = jasperPath(reportName, extension);
         createParentDir(path);
-        try {
-            BufferedWriter writer = new BufferedWriter(new FileWriter(new File(path)));
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(new File(path)))) {
             writer.write(content);
-            writer.close();
-        } 
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
-    
+
     public static void writeToFile(String name, byte[] content) {
         String path = jasperPath(name);
         createParentDir(name);
-        try {
-            OutputStream output = new FileOutputStream(new File(path));
+        try (OutputStream output = new FileOutputStream(new File(path))) {
             output.write(content);
-            output.close();
-        } 
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
     
-    public static Map<String, Object> parseJSON(String jsonContent)
-    {
-        ObjectMapper mapper = new ObjectMapper();
+    public static Map<String, Object> parseJSON(String jsonContent) {
         try {
-            return mapper.readValue(jsonContent, new TypeReference<HashMap<String, Object>>() {});
+            return JSON_MAPPER.readValue(jsonContent, new TypeReference<HashMap<String, Object>>() {});
         } catch (IOException e) {
             throw new RuntimeException(e);
-        } 
+        }
     }
     
     public static String decode64(String encodedContent, Charset charset) {
