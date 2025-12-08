@@ -26,10 +26,8 @@ public class Context {
                 });
             });
             config.requestLogger.http((ctx, ms) -> {
-              logger.info(
-                  "{} {}. Request processed in {} milliseconds.",
-                  requestLog(ctx), responseLog(ctx), ms
-               );
+              logger.info("{} {} - {}ms",
+                  ctx.method(), ctx.path(), Math.round(ms));
             });
             String maxBodySize = Utils.environment("MAX_REQUEST_BODY_SIZE", null);
             if (maxBodySize != null) {
@@ -50,21 +48,6 @@ public class Context {
 
     public Javalin getApp() {
         return app;
-    }
-
-    private String requestLog(io.javalin.http.Context ctx) {
-        return new StringBuilder()
-            .append(ctx.method()).append(" ")
-            .append(ctx.url())
-            .toString();
-    }
-
-    private String responseLog(io.javalin.http.Context ctx) {
-        return new StringBuilder()
-           .append("Response: ")
-           .append(ctx.status()).append(" ")
-           .append(ctx.header("content-type"))
-           .toString();
     }
 
     private void configureLogger() throws IOException {

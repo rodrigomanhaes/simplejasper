@@ -8,10 +8,14 @@ import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.javalin.Javalin;
 import simplejasper.Jasper;
 
 public class Add implements Endpoint {
+    private static final Logger logger = LoggerFactory.getLogger(Add.class);
 
     @Override
     @SuppressWarnings("unchecked")
@@ -19,15 +23,22 @@ public class Add implements Endpoint {
         app.post(basePath + "/add", ctx -> {
             ctx.header("Content-Type", "application/json");
             Map<String, Object> requestData = parseJSON(ctx.body());
+            String reportName = (String) requestData.get("name");
             compile(requestData);
             List<Map<String, Object>> images = (List<Map<String, Object>>) requestData.get("images");
-            processImages(images);
+            int imageCount = processImages(images);
+            if (reportName != null) {
+                logger.info("Compiled report: {}{}", reportName,
+                    imageCount > 0 ? ", images: " + imageCount : "");
+            } else if (imageCount > 0) {
+                logger.info("Added images: {}", imageCount);
+            }
             ctx.result("{\"success\":true}");
         });
     }
 
-    private void processImages(List<Map<String, Object>> images) {
-        if (images == null) { return; }
+    private int processImages(List<Map<String, Object>> images) {
+        if (images == null) { return 0; }
 
         for (Map<String, Object> image: images) {
             String imageName = (String) image.get("name");
@@ -35,6 +46,7 @@ public class Add implements Endpoint {
             byte[] decodedImageBytes = decode64(encodedImageContent);
             writeToFile(imageName, decodedImageBytes);
         }
+        return images.size();
     }
 
     private void compile(Map<String, Object> requestData) {
