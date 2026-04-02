@@ -1,9 +1,10 @@
-// Original idea from https://www.juliaaano.com/blog/2017/02/21/make-simple-with-spark-java/
+// ABOUTME: Declares an endpoint that registers routes during Javalin configuration.
+// ABOUTME: Each implementation provides its HTTP handlers via RoutesConfig.
 
 package simplejasper.endpoint;
 
-import io.javalin.Javalin;
+import io.javalin.config.RoutesConfig;
 
 public interface Endpoint {
-    void configure(Javalin app, String basePath);
+    void configure(RoutesConfig routes, String basePath);
 }

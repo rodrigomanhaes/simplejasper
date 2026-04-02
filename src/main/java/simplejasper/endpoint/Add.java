@@ -11,7 +11,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.javalin.Javalin;
+import io.javalin.config.RoutesConfig;
 import simplejasper.Jasper;
 
 public class Add implements Endpoint {
@@ -19,8 +19,8 @@ public class Add implements Endpoint {
 
     @Override
     @SuppressWarnings("unchecked")
-    public void configure(Javalin app, String basePath) {
-        app.post(basePath + "/add", ctx -> {
+    public void configure(RoutesConfig routes, String basePath) {
+        routes.post(basePath + "/add", ctx -> {
             ctx.header("Content-Type", "application/json");
             Map<String, Object> requestData = parseJSON(ctx.body());
             String reportName = (String) requestData.get("name");

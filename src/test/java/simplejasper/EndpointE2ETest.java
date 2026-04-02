@@ -51,9 +51,9 @@ class EndpointE2ETest {
         RestAssured.port = TEST_PORT;
 
         // Start the server
-        context = new Context(TEST_PORT, "");
-        context.addEndpoint(new simplejasper.endpoint.Add());
-        context.addEndpoint(new simplejasper.endpoint.Generate());
+        context = new Context(TEST_PORT, "",
+            new simplejasper.endpoint.Add(),
+            new simplejasper.endpoint.Generate());
 
         // Wait for server to start
         try {
