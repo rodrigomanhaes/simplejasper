@@ -13,6 +13,8 @@ import org.slf4j.LoggerFactory;
 
 import io.javalin.config.RoutesConfig;
 import io.javalin.http.Context;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Timer;
 import simplejasper.Jasper;
 
 public class Generate implements Endpoint {
@@ -27,7 +29,20 @@ public class Generate implements Endpoint {
             List<?> data = (List<?>) decodedData.get("data");
             @SuppressWarnings("unchecked")
             Map<String, Object> parameters = (Map<String, Object>) decodedData.get("parameters");
-            byte[] pdf = Jasper.generate(reportName, data, parameters);
+
+            Timer.Sample sample = Timer.start(Metrics.globalRegistry);
+            String outcome = "success";
+            byte[] pdf;
+            try {
+                pdf = Jasper.generate(reportName, data, parameters);
+            } catch (RuntimeException e) {
+                outcome = "error";
+                throw e;
+            } finally {
+                sample.stop(Metrics.timer("simplejasper.report.generation",
+                    "report", reportName, "outcome", outcome));
+            }
+
             logger.info("Generated report: {}, items: {}, pdf: {}KB",
                 reportName, data.size(), pdf.length / 1024);
             String encodedPdf = encode64(pdf);

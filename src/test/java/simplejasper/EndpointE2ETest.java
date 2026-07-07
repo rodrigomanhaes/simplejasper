@@ -527,4 +527,27 @@ class EndpointE2ETest {
         assertThat(body, containsString("jvm_memory_used_bytes"));
         assertThat(response.getContentType(), containsString("text/plain"));
     }
+
+    @Test
+    @Order(15)
+    @DisplayName("Metrics endpoint should record report generation timings")
+    void testMetricsEndpoint_RecordsReportGeneration() throws IOException {
+        String reportName = "metrics_probe_report";
+        String jrxmlContent = TestUtils.readTestResource("test_report.jrxml");
+        Map<String, Object> addRequest = TestUtils.createAddRequest(reportName, jrxmlContent);
+        given().contentType(ContentType.JSON).body(addRequest).post("/add")
+            .then().statusCode(200);
+
+        List<Map<String, Object>> data = TestUtils.createSampleData();
+        Map<String, Object> generateRequest = TestUtils.createGenerateRequest(reportName, data, null);
+        given().contentType(ContentType.JSON).body(generateRequest).post("/generate")
+            .then().statusCode(200);
+
+        String body = given().when().get("/metrics").then().statusCode(200)
+            .extract().response().getBody().asString();
+
+        assertThat(body, containsString("simplejasper_report_generation_seconds"));
+        assertThat(body, containsString("report=\"" + reportName + "\""));
+        assertThat(body, containsString("outcome=\"success\""));
+    }
 }
