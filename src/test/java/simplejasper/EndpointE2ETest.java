@@ -550,4 +550,30 @@ class EndpointE2ETest {
         assertThat(body, containsString("report=\"" + reportName + "\""));
         assertThat(body, containsString("outcome=\"success\""));
     }
+
+    @Test
+    @Order(16)
+    @DisplayName("Generate with pdfa flag produces a PDF/A-1b document")
+    void testGenerateEndpoint_PdfA() throws IOException {
+        String jrxml = TestUtils.readTestResource("pdfa_report.jrxml");
+        given().contentType(ContentType.JSON)
+            .body(TestUtils.createAddRequest("pdfa_report", jrxml)).post("/add");
+
+        List<Map<String, Object>> data = List.of(Map.of("name", "Curso", "value", "Engenharia"));
+        Map<String, Object> req = TestUtils.createGenerateRequest("pdfa_report", data, null);
+        req.put("pdfa", "1b");
+
+        Response response = given().contentType(ContentType.JSON).body(req)
+            .when().post("/generate").then().statusCode(200).extract().response();
+
+        byte[] pdf = TestUtils.decodeBase64ToBytes(response.jsonPath().getString("content"));
+        try (org.apache.pdfbox.pdmodel.PDDocument doc = org.apache.pdfbox.Loader.loadPDF(pdf)) {
+            assertThat(doc.getDocumentCatalog().getOutputIntents(), is(not(empty())));
+            byte[] xmp = doc.getDocumentCatalog().getMetadata().exportXMPMetadata().readAllBytes();
+            String xmpStr = new String(xmp, java.nio.charset.StandardCharsets.UTF_8);
+            assertThat(xmpStr, containsString("pdfaid"));
+            assertThat(xmpStr, containsString(">1<"));
+            assertThat(xmpStr, containsString(">B<"));
+        }
+    }
 }

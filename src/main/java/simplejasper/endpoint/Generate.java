@@ -12,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.javalin.config.RoutesConfig;
-import io.javalin.http.Context;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.Timer;
 import simplejasper.Jasper;
@@ -24,7 +23,9 @@ public class Generate implements Endpoint {
     public void configure(RoutesConfig routes, String basePath) {
         routes.post(basePath + "/generate", (ctx) -> {
             ctx.header("Content-Type", "application/json");
-            Map<String, Object> decodedData = decodedData(ctx);
+            Map<String, Object> requestData = parseJSON(ctx.body());
+            String pdfa = requestData.get("pdfa") != null ? requestData.get("pdfa").toString() : null;
+            Map<String, Object> decodedData = decodedDataFrom(requestData);
             String reportName = decodedData.get("name").toString();
             List<?> data = (List<?>) decodedData.get("data");
             @SuppressWarnings("unchecked")
@@ -34,7 +35,7 @@ public class Generate implements Endpoint {
             String outcome = "success";
             byte[] pdf;
             try {
-                pdf = Jasper.generate(reportName, data, parameters);
+                pdf = Jasper.generate(reportName, data, parameters, pdfa);
             } catch (RuntimeException e) {
                 outcome = "error";
                 throw e;
@@ -50,8 +51,7 @@ public class Generate implements Endpoint {
         });
     }
 
-    private Map<String, Object> decodedData(Context ctx) {
-        Map<String, Object> requestData = parseJSON(ctx.body());
+    private Map<String, Object> decodedDataFrom(Map<String, Object> requestData) {
         String encodedData = (String) requestData.get("data");
         String decodedData = decode64(encodedData, Charset.forName("UTF-8"));
         return parseJSON(decodedData);
