@@ -510,4 +510,21 @@ class EndpointE2ETest {
         String pdfText = TestUtils.extractPdfText(pdfBytes);
         assertThat(pdfText, containsString("Test Report"));
     }
+
+    @Test
+    @Order(14)
+    @DisplayName("Metrics endpoint should expose Prometheus text with JVM metrics")
+    void testMetricsEndpoint_ExposesJvmMetrics() {
+        Response response = given()
+            .when()
+            .get("/metrics")
+            .then()
+            .statusCode(200)
+            .extract()
+            .response();
+
+        String body = response.getBody().asString();
+        assertThat(body, containsString("jvm_memory_used_bytes"));
+        assertThat(response.getContentType(), containsString("text/plain"));
+    }
 }
