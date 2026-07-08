@@ -29,7 +29,6 @@
               <goal>repackage</goal>
             </goals>
             <configuration>
-              <classifier>spring-boot</classifier>
               <mainClass>
                 simplejasper.Server
               </mainClass>
@@ -161,4 +160,7 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+  <properties>
+    <start-class>simplejasper.Server</start-class>
+  </properties>
 </project>
