@@ -510,4 +510,70 @@ class EndpointE2ETest {
         String pdfText = TestUtils.extractPdfText(pdfBytes);
         assertThat(pdfText, containsString("Test Report"));
     }
+
+    @Test
+    @Order(14)
+    @DisplayName("Metrics endpoint should expose Prometheus text with JVM metrics")
+    void testMetricsEndpoint_ExposesJvmMetrics() {
+        Response response = given()
+            .when()
+            .get("/metrics")
+            .then()
+            .statusCode(200)
+            .extract()
+            .response();
+
+        String body = response.getBody().asString();
+        assertThat(body, containsString("jvm_memory_used_bytes"));
+        assertThat(response.getContentType(), containsString("text/plain"));
+    }
+
+    @Test
+    @Order(15)
+    @DisplayName("Metrics endpoint should record report generation timings")
+    void testMetricsEndpoint_RecordsReportGeneration() throws IOException {
+        String reportName = "metrics_probe_report";
+        String jrxmlContent = TestUtils.readTestResource("test_report.jrxml");
+        Map<String, Object> addRequest = TestUtils.createAddRequest(reportName, jrxmlContent);
+        given().contentType(ContentType.JSON).body(addRequest).post("/add")
+            .then().statusCode(200);
+
+        List<Map<String, Object>> data = TestUtils.createSampleData();
+        Map<String, Object> generateRequest = TestUtils.createGenerateRequest(reportName, data, null);
+        given().contentType(ContentType.JSON).body(generateRequest).post("/generate")
+            .then().statusCode(200);
+
+        String body = given().when().get("/metrics").then().statusCode(200)
+            .extract().response().getBody().asString();
+
+        assertThat(body, containsString("simplejasper_report_generation_seconds"));
+        assertThat(body, containsString("report=\"" + reportName + "\""));
+        assertThat(body, containsString("outcome=\"success\""));
+    }
+
+    @Test
+    @Order(16)
+    @DisplayName("Generate with pdfa flag produces a PDF/A-1b document")
+    void testGenerateEndpoint_PdfA() throws IOException {
+        String jrxml = TestUtils.readTestResource("pdfa_report.jrxml");
+        given().contentType(ContentType.JSON)
+            .body(TestUtils.createAddRequest("pdfa_report", jrxml)).post("/add");
+
+        List<Map<String, Object>> data = List.of(Map.of("name", "Curso", "value", "Engenharia"));
+        Map<String, Object> req = TestUtils.createGenerateRequest("pdfa_report", data, null);
+        req.put("pdfa", "1b");
+
+        Response response = given().contentType(ContentType.JSON).body(req)
+            .when().post("/generate").then().statusCode(200).extract().response();
+
+        byte[] pdf = TestUtils.decodeBase64ToBytes(response.jsonPath().getString("content"));
+        try (org.apache.pdfbox.pdmodel.PDDocument doc = org.apache.pdfbox.Loader.loadPDF(pdf)) {
+            assertThat(doc.getDocumentCatalog().getOutputIntents(), is(not(empty())));
+            byte[] xmp = doc.getDocumentCatalog().getMetadata().exportXMPMetadata().readAllBytes();
+            String xmpStr = new String(xmp, java.nio.charset.StandardCharsets.UTF_8);
+            assertThat(xmpStr, containsString("pdfaid"));
+            assertThat(xmpStr, containsString(">1<"));
+            assertThat(xmpStr, containsString(">B<"));
+        }
+    }
 }

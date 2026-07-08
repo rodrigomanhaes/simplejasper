@@ -29,7 +29,6 @@
               <goal>repackage</goal>
             </goals>
             <configuration>
-              <classifier>spring-boot</classifier>
               <mainClass>
                 simplejasper.Server
               </mainClass>
@@ -123,7 +122,17 @@
     <dependency>
       <groupId>io.javalin</groupId>
       <artifactId>javalin</artifactId>
-      <version>7.1.0</version>
+      <version>7.2.2</version>
+    </dependency>
+    <dependency>
+      <groupId>io.javalin</groupId>
+      <artifactId>javalin-micrometer</artifactId>
+      <version>7.2.2</version>
+    </dependency>
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-registry-prometheus</artifactId>
+      <version>1.16.5</version>
     </dependency>
     <!-- Testing dependencies -->
     <dependency>
@@ -151,4 +160,7 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+  <properties>
+    <start-class>simplejasper.Server</start-class>
+  </properties>
 </project>
