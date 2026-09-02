@@ -31,6 +31,11 @@ public class Generate implements Endpoint {
             @SuppressWarnings("unchecked")
             Map<String, Object> parameters = (Map<String, Object>) decodedData.get("parameters");
 
+            // Logged before generation and not only after it: a generation that
+            // never returns leaves no other record of which report was being
+            // built, nor of how much data it was handed.
+            logger.info("Generating report: {}, items: {}", reportName, data.size());
+
             Timer.Sample sample = Timer.start(Metrics.globalRegistry);
             String outcome = "success";
             byte[] pdf;

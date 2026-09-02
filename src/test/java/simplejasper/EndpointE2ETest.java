@@ -7,7 +7,10 @@ import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.*;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -575,5 +578,48 @@ class EndpointE2ETest {
             assertThat(xmpStr, containsString(">1<"));
             assertThat(xmpStr, containsString(">B<"));
         }
+    }
+
+    @Test
+    @Order(17)
+    @DisplayName("Generate endpoint should log the report name before generating it")
+    void testGenerateEndpoint_LogsBeforeGenerating() throws IOException {
+        String jrxmlContent = TestUtils.readTestResource("test_report.jrxml");
+        given()
+            .contentType(ContentType.JSON)
+            .body(TestUtils.createAddRequest("log_test_report", jrxmlContent))
+            .post("/add");
+
+        List<Map<String, Object>> data = TestUtils.createSampleData();
+        Map<String, Object> generateRequest =
+            TestUtils.createGenerateRequest("log_test_report", data, Map.of("title", "Log Test"));
+
+        PrintStream originalErr = System.err;
+        ByteArrayOutputStream captured = new ByteArrayOutputStream();
+        String log;
+        try {
+            System.setErr(new PrintStream(captured, true, StandardCharsets.UTF_8));
+            given()
+                .contentType(ContentType.JSON)
+                .body(generateRequest)
+                .when()
+                .post("/generate")
+                .then()
+                .statusCode(200);
+            log = captured.toString(StandardCharsets.UTF_8);
+        } finally {
+            System.setErr(originalErr);
+        }
+
+        // Control assertion: the line below already exists, so if this fails the log
+        // is not being captured at all and the remaining assertions mean nothing.
+        assertThat("log capture is not working",
+            log, containsString("Generated report: log_test_report"));
+
+        assertThat(log,
+            containsString("Generating report: log_test_report, items: " + data.size()));
+        assertThat("the report must be named before generation starts, otherwise a "
+                + "generation that never returns leaves no trace",
+            log.indexOf("Generating report"), lessThan(log.indexOf("Generated report")));
     }
 }
