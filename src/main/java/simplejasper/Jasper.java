@@ -142,7 +142,6 @@ public class Jasper {
             SimplePdfExporterConfiguration config = new SimplePdfExporterConfiguration();
             config.setPdfaConformance(pdfaConformance(pdfaLevel));
             config.setIccProfilePath(iccPath.toAbsolutePath().toString());
-            config.setTagged(Boolean.TRUE);
             exporter.setConfiguration(config);
             exporter.exportReport();
             return baos.toByteArray();
