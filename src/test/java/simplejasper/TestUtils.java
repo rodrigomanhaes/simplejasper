@@ -4,13 +4,21 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.documentinterchange.logicalstructure.PDMarkedContentReference;
+import org.apache.pdfbox.pdmodel.documentinterchange.logicalstructure.PDStructureElement;
+import org.apache.pdfbox.pdmodel.documentinterchange.logicalstructure.PDStructureTreeRoot;
+import org.apache.pdfbox.pdmodel.documentinterchange.markedcontent.PDMarkedContent;
+import org.apache.pdfbox.text.PDFMarkedContentExtractor;
 import org.apache.pdfbox.text.PDFTextStripper;
+import org.apache.pdfbox.text.TextPosition;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -145,6 +153,73 @@ public class TestUtils {
         try (PDDocument document = Loader.loadPDF(pdfBytes)) {
             PDFTextStripper stripper = new PDFTextStripper();
             return stripper.getText(document);
+        }
+    }
+
+    /**
+     * Lists the structure elements of a tagged PDF in the order a screen reader visits them, one line per
+     * element, indented two spaces per level, as "Type" or "Type: text of its own marked content".
+     * Returns an empty list when the PDF has no structure tree.
+     */
+    public static List<String> structureTree(byte[] pdfBytes) throws IOException {
+        try (PDDocument document = Loader.loadPDF(pdfBytes)) {
+            PDStructureTreeRoot root = document.getDocumentCatalog().getStructureTreeRoot();
+            if (root == null) {
+                return List.of();
+            }
+            Map<PDPage, Map<Integer, String>> textByPage = new HashMap<>();
+            for (PDPage page : document.getPages()) {
+                PDFMarkedContentExtractor extractor = new PDFMarkedContentExtractor();
+                extractor.processPage(page);
+                Map<Integer, String> texts = new HashMap<>();
+                extractor.getMarkedContents().forEach(content -> collectMarkedText(content, texts));
+                textByPage.put(page, texts);
+            }
+            List<String> lines = new ArrayList<>();
+            for (Object kid : root.getKids()) {
+                if (kid instanceof PDStructureElement element) {
+                    appendStructure(element, null, 0, textByPage, lines);
+                }
+            }
+            return lines;
+        }
+    }
+
+    private static void collectMarkedText(PDMarkedContent content, Map<Integer, String> texts) {
+        StringBuilder text = new StringBuilder();
+        for (Object item : content.getContents()) {
+            if (item instanceof TextPosition position) {
+                text.append(position.getUnicode());
+            } else if (item instanceof PDMarkedContent nested) {
+                collectMarkedText(nested, texts);
+            }
+        }
+        if (content.getMCID() >= 0) {
+            texts.merge(content.getMCID(), text.toString(), String::concat);
+        }
+    }
+
+    private static void appendStructure(PDStructureElement element, PDPage page, int depth,
+            Map<PDPage, Map<Integer, String>> textByPage, List<String> lines) {
+        PDPage elementPage = element.getPage() != null ? element.getPage() : page;
+        StringBuilder text = new StringBuilder();
+        List<PDStructureElement> children = new ArrayList<>();
+        for (Object kid : element.getKids()) {
+            if (kid instanceof PDStructureElement child) {
+                children.add(child);
+            } else if (kid instanceof Integer mcid) {
+                text.append(textByPage.getOrDefault(elementPage, Map.of()).getOrDefault(mcid, ""));
+            } else if (kid instanceof PDMarkedContentReference reference) {
+                PDPage referencePage = reference.getPage() != null ? reference.getPage() : elementPage;
+                text.append(textByPage.getOrDefault(referencePage, Map.of()).getOrDefault(reference.getMCID(), ""));
+            }
+        }
+        String indent = "  ".repeat(depth);
+        lines.add(text.isEmpty()
+            ? indent + element.getStructureType()
+            : indent + element.getStructureType() + ": " + text);
+        for (PDStructureElement child : children) {
+            appendStructure(child, elementPage, depth + 1, textByPage, lines);
         }
     }
 

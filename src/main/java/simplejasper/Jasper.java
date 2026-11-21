@@ -141,6 +141,7 @@ public class Jasper {
             exporter.setExporterOutput(new SimpleOutputStreamExporterOutput(baos));
             SimplePdfExporterConfiguration config = new SimplePdfExporterConfiguration();
             config.setPdfaConformance(pdfaConformance(pdfaLevel));
+            config.setTagged(Boolean.TRUE);
             config.setIccProfilePath(iccPath.toAbsolutePath().toString());
             exporter.setConfiguration(config);
             exporter.exportReport();
@@ -152,6 +153,7 @@ public class Jasper {
 
     private static PdfaConformanceEnum pdfaConformance(String level) {
         return switch (level.toLowerCase()) {
+            case "1a" -> PdfaConformanceEnum.PDFA_1A;
             case "1b" -> PdfaConformanceEnum.PDFA_1B;
             case "2b" -> PdfaConformanceEnum.PDFA_2B;
             case "3b" -> PdfaConformanceEnum.PDFA_3B;

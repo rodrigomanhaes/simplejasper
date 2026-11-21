@@ -577,7 +577,10 @@ class EndpointE2ETest {
             assertThat(xmpStr, containsString("pdfaid"));
             assertThat(xmpStr, containsString(">1<"));
             assertThat(xmpStr, containsString(">B<"));
+            assertThat(doc.getDocumentCatalog().getMarkInfo(), is(notNullValue()));
+            assertThat(doc.getDocumentCatalog().getMarkInfo().isMarked(), is(true));
         }
+        assertThat(TestUtils.structureTree(pdf), contains("Document", "  Text: Curso = Engenharia"));
     }
 
     @Test
@@ -621,5 +624,54 @@ class EndpointE2ETest {
         assertThat("the report must be named before generation starts, otherwise a "
                 + "generation that never returns leaves no trace",
             log.indexOf("Generating report"), lessThan(log.indexOf("Generated report")));
+    }
+
+    @Test
+    @Order(18)
+    @DisplayName("Generate with pdfa 1a produces a tagged PDF/A-1a document")
+    void testGenerateEndpoint_PdfA1a() throws IOException {
+        String jrxml = TestUtils.readTestResource("pdfa_report.jrxml");
+        given().contentType(ContentType.JSON)
+            .body(TestUtils.createAddRequest("pdfa_report", jrxml)).post("/add");
+
+        List<Map<String, Object>> data = List.of(Map.of("name", "Curso", "value", "Engenharia"));
+        Map<String, Object> req = TestUtils.createGenerateRequest("pdfa_report", data, null);
+        req.put("pdfa", "1a");
+
+        Response response = given().contentType(ContentType.JSON).body(req)
+            .when().post("/generate").then().statusCode(200).extract().response();
+
+        byte[] pdf = TestUtils.decodeBase64ToBytes(response.jsonPath().getString("content"));
+        try (org.apache.pdfbox.pdmodel.PDDocument doc = org.apache.pdfbox.Loader.loadPDF(pdf)) {
+            byte[] xmp = doc.getDocumentCatalog().getMetadata().exportXMPMetadata().readAllBytes();
+            String xmpStr = new String(xmp, java.nio.charset.StandardCharsets.UTF_8);
+            assertThat(xmpStr, containsString(">1<"));
+            assertThat(xmpStr, containsString(">A<"));
+        }
+        assertThat(TestUtils.structureTree(pdf), contains("Document", "  Text: Curso = Engenharia"));
+    }
+
+    @Test
+    @Order(19)
+    @DisplayName("Generate with pdfa tags a hyperlink inside styled text as a Link of its own")
+    void testGenerateEndpoint_PdfATagsStyledTextHyperlink() throws IOException {
+        String jrxml = TestUtils.readTestResource("pdfa_link_report.jrxml");
+        given().contentType(ContentType.JSON)
+            .body(TestUtils.createAddRequest("pdfa_link_report", jrxml)).post("/add");
+
+        List<Map<String, Object>> data = List.of(Map.of("name", "site", "value", "https://example.org"));
+        Map<String, Object> req = TestUtils.createGenerateRequest("pdfa_link_report", data, null);
+        req.put("pdfa", "1b");
+
+        Response response = given().contentType(ContentType.JSON).body(req)
+            .when().post("/generate").then().statusCode(200).extract().response();
+
+        byte[] pdf = TestUtils.decodeBase64ToBytes(response.jsonPath().getString("content"));
+        assertThat(TestUtils.structureTree(pdf), contains(
+            "Document",
+            "  Text",
+            "    Span: Veja o ",
+            "    Link: site",
+            "    Span:  da universidade"));
     }
 }
