@@ -155,7 +155,9 @@ public class Jasper {
         return switch (level.toLowerCase()) {
             case "1a" -> PdfaConformanceEnum.PDFA_1A;
             case "1b" -> PdfaConformanceEnum.PDFA_1B;
+            case "2a" -> PdfaConformanceEnum.PDFA_2A;
             case "2b" -> PdfaConformanceEnum.PDFA_2B;
+            case "3a" -> PdfaConformanceEnum.PDFA_3A;
             case "3b" -> PdfaConformanceEnum.PDFA_3B;
             default -> throw new IllegalArgumentException("Unsupported PDF/A level: " + level);
         };

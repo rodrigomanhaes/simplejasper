@@ -6,6 +6,8 @@ import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -626,17 +628,18 @@ class EndpointE2ETest {
             log.indexOf("Generating report"), lessThan(log.indexOf("Generated report")));
     }
 
-    @Test
+    @ParameterizedTest(name = "pdfa {0}")
+    @ValueSource(strings = {"1a", "2a", "3a"})
     @Order(18)
-    @DisplayName("Generate with pdfa 1a produces a tagged PDF/A-1a document")
-    void testGenerateEndpoint_PdfA1a() throws IOException {
+    @DisplayName("Generate with an accessible pdfa level produces a tagged PDF/A document of that part")
+    void testGenerateEndpoint_PdfAAccessible(String level) throws IOException {
         String jrxml = TestUtils.readTestResource("pdfa_report.jrxml");
         given().contentType(ContentType.JSON)
             .body(TestUtils.createAddRequest("pdfa_report", jrxml)).post("/add");
 
         List<Map<String, Object>> data = List.of(Map.of("name", "Curso", "value", "Engenharia"));
         Map<String, Object> req = TestUtils.createGenerateRequest("pdfa_report", data, null);
-        req.put("pdfa", "1a");
+        req.put("pdfa", level);
 
         Response response = given().contentType(ContentType.JSON).body(req)
             .when().post("/generate").then().statusCode(200).extract().response();
@@ -645,8 +648,8 @@ class EndpointE2ETest {
         try (org.apache.pdfbox.pdmodel.PDDocument doc = org.apache.pdfbox.Loader.loadPDF(pdf)) {
             byte[] xmp = doc.getDocumentCatalog().getMetadata().exportXMPMetadata().readAllBytes();
             String xmpStr = new String(xmp, java.nio.charset.StandardCharsets.UTF_8);
-            assertThat(xmpStr, containsString(">1<"));
-            assertThat(xmpStr, containsString(">A<"));
+            assertThat(xmpStr, containsString("<pdfaid:part>" + level.charAt(0) + "</pdfaid:part>"));
+            assertThat(xmpStr, containsString("<pdfaid:conformance>A</pdfaid:conformance>"));
         }
         assertThat(TestUtils.structureTree(pdf), contains("Document", "  Text: Curso = Engenharia"));
     }
